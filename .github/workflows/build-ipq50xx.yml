@@ -292,6 +292,7 @@ jobs:
           names=(-name 'openwrt-*-squashfs-sysupgrade.bin'); sums='sysupgrade\.bin'
           if [[ "$GROUP" == 256m ]]; then
             names+=(-o -name 'openwrt-*-initramfs-factory.ubi'); sums+='|initramfs-factory\.ubi'
+            names+=(-o -name 'openwrt-*-initramfs-uImage.itb'); sums+='|initramfs-uImage\.itb'
           fi
           mapfile -t assets < <(find "$out" -maxdepth 1 -type f \( "${names[@]}" \))
           grep -E "$sums" "$out/sha256sums" >"sha256sums-${GROUP}.txt"
