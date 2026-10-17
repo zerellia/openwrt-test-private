@@ -1,4 +1,5 @@
 #!/bin/sh
+. /lib/functions.sh
 [ "$(board_name)" = "ruijie,rg-ma3063" ] || exit 0
 wifi config 2>/dev/null
 uci -q delete wireless.radio0.disabled
