@@ -91,7 +91,6 @@ jobs:
             echo
             echo "| group | memory | boards |"
             echo "|---|---|---|"
-            echo "| std | 512 MB / 1 GB | $(boards std)|"
             echo "| 256m | 256 MB | $(boards 256m)|"
           } >release_notes.md
           gh release create "$tag" --repo "$GITHUB_REPOSITORY" --draft --target "$GITHUB_SHA" \
@@ -371,7 +370,7 @@ jobs:
             echo "An image lists its own; kernel modules only install on an image from the same build."
             echo
             for t in $(find . -maxdepth 1 -type d -printf '%f\n' | grep -E "$TAG_RE" | sort -r); do
-              echo "- ${t}: [std](${t}/std/packages.adb), [256m](${t}/256m/packages.adb)," \
+              echo "- ${t}: [256m](${t}/256m/packages.adb)," \
                 "[release](https://github.com/${GITHUB_REPOSITORY}/releases/tag/${t})"
             done
           } >index.md
