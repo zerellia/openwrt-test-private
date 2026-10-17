@@ -1,0 +1,23 @@
+From: mufeng05
+Subject: ath11k: enlarge DP_RX_RELEASE_RING_SIZE for NSS stability
+
+NSS firmware reaps the RX_RELEASE ring itself. With the small default
+1024, the NSS core traps under sustained traffic. Enlarge to 4096
+per mufeng05's measurements.
+
+---
+ drivers/net/wireless/ath/ath11k/dp.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/dp.h b/drivers/net/wireless/ath/ath11k/dp.h
+index 1234567..89abcde 100644
+--- a/drivers/net/wireless/ath/ath11k/dp.h
++++ b/drivers/net/wireless/ath/ath11k/dp.h
+@@ -213,7 +213,7 @@ struct ath11k_pdev_dp {
+ #define DP_REO_DST_RING_SIZE		2048
+ #define DP_REO_REINJECT_RING_SIZE	32
+-#define DP_RX_RELEASE_RING_SIZE		1024
++#define DP_RX_RELEASE_RING_SIZE		4096
+ #define DP_REO_EXCEPTION_RING_SIZE	128
+ #define DP_REO_CMD_RING_SIZE		256
+ #define DP_REO_STATUS_RING_SIZE		2048
