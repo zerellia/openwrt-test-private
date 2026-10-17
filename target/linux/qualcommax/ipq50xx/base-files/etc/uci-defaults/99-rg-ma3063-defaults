@@ -1,12 +1,6 @@
 #!/bin/sh
 . /lib/functions.sh
 [ "$(board_name)" = "ruijie,rg-ma3063" ] || exit 0
-rm -f /etc/config/wireless
-wifi config 2>/dev/null
-uci set wireless.default_radio0.ssid='MA3063-2G'
-uci set wireless.default_radio0.disabled='0'
-uci set wireless.default_radio1.ssid='MA3063-5G'
-uci set wireless.default_radio1.disabled='0'
 uci set network.lan.ipaddr='192.168.10.1/24'
-uci commit
+uci commit network
 exit 0
