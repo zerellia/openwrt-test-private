@@ -109,7 +109,7 @@ jobs:
       fail-fast: false
       matrix:
         # One group = one ath11k/nss-drv memory profile, which is image-wide.
-        group: [std, 256m]
+        group: [256m]
     env:
       GH_TOKEN: ${{ github.token }}
       GROUP: ${{ matrix.group }}
