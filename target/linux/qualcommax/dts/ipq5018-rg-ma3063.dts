@@ -188,10 +188,6 @@
 	status = "okay";
 };
 
-&ge_phy {
-	qcom,dac-preset-short-cable;
-};
-
 &mdio1 {
 	status = "okay";
 
@@ -248,7 +244,6 @@
 				label = "lan4";
 				phy-handle = <&qca8337_2>;
 			};
-
 
 			port@6 {
 				reg = <6>;
