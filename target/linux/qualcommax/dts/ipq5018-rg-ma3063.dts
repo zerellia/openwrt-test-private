@@ -347,3 +347,10 @@
 &nss_region {
 	reg = <0x0 0x40000000 0x0 0x800000>;
 };
+
+&uniphy0 {
+	status = "okay";
+
+	assigned-clocks = <&uniphy0 UNIPHY_CLK_REF>;
+	assigned-clock-rates = <UNIPHY_REFCLK_25MHZ>;
+};
