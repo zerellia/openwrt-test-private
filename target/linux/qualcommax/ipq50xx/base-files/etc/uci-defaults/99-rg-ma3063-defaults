@@ -1,0 +1,10 @@
+#!/bin/sh
+[ "$(board_name)" = "ruijie,rg-ma3063" ] || exit 0
+wifi config 2>/dev/null
+uci -q delete wireless.radio0.disabled
+uci -q delete wireless.radio1.disabled
+uci -q delete wireless.default_radio0.disabled
+uci -q delete wireless.default_radio1.disabled
+uci set network.lan.ipaddr='192.168.10.1/24'
+uci commit
+exit 0
