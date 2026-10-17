@@ -1,0 +1,53 @@
+From: mufeng05 (adapted for kuncy7 tree, only non-conflicting hunks)
+Subject: ath11k: shrink remaining DP rings for 256M boards
+
+This is a subset of mufeng05's 990 patch, containing only the changes
+that do not conflict with kuncy7's 207 patch.
+
+kuncy7's 207 already handles (via 256M profile):
+- DP_TX_COMP_RING_SIZE
+- DP_RXDMA_MON_STATUS_RING_SIZE
+- DP_RXDMA_MONITOR_BUF_RING_SIZE
+- DP_RXDMA_MONITOR_DST_RING_SIZE
+
+This patch handles the remaining three:
+- DP_RX_RELEASE_RING_SIZE: 1024 -> 4096 (NSS stability)
+- DP_RXDMA_BUF_RING_SIZE: 4096 -> 1024 (RAM saving)
+- DP_RXDMA_MONITOR_DESC_RING_SIZE: 4096 -> 128 (RAM saving)
+
+---
+ drivers/net/wireless/ath/ath11k/dp.h | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/dp.h b/drivers/net/wireless/ath/ath11k/dp.h
+index 1234567..89abcde 100644
+--- a/drivers/net/wireless/ath/ath11k/dp.h
++++ b/drivers/net/wireless/ath/ath11k/dp.h
+@@ -206,24 +206,24 @@
+ #define DP_WBM_RELEASE_RING_SIZE	64
+ #define DP_TCL_DATA_RING_SIZE		512
+ #define DP_TCL_DATA_RING_SIZE_WCN6750	2048
+ #define DP_TX_COMP_RING_SIZE		32768
+ #define DP_TX_IDR_SIZE			DP_TX_COMP_RING_SIZE
+ #define DP_TCL_CMD_RING_SIZE		32
+ #define DP_TCL_STATUS_RING_SIZE		32
+ #define DP_REO_DST_RING_MAX		4
+ #define DP_REO_DST_RING_SIZE		2048
+ #define DP_REO_REINJECT_RING_SIZE	32
+-#define DP_RX_RELEASE_RING_SIZE		1024
++#define DP_RX_RELEASE_RING_SIZE		4096
+ #define DP_REO_EXCEPTION_RING_SIZE	128
+ #define DP_REO_CMD_RING_SIZE		256
+ #define DP_REO_STATUS_RING_SIZE		2048
+-#define DP_RXDMA_BUF_RING_SIZE		4096
++#define DP_RXDMA_BUF_RING_SIZE	1024
+ #define DP_RXDMA_REFILL_RING_SIZE	2048
+ #define DP_RXDMA_ERR_DST_RING_SIZE	1024
+ #define DP_RXDMA_MON_STATUS_RING_SIZE	1024
+ #define DP_RXDMA_MONITOR_BUF_RING_SIZE	4096
+ #define DP_RXDMA_MONITOR_DST_RING_SIZE	2048
+-#define DP_RXDMA_MONITOR_DESC_RING_SIZE	4096
++#define DP_RXDMA_MONITOR_DESC_RING_SIZE	128
+ 
+ #define DP_RX_RELEASE_RING_NUM	3
+ 
