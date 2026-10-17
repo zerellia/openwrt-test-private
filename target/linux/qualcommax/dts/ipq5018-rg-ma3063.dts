@@ -182,13 +182,6 @@
 	qcom,dac-preset-short-cable;
 };
 
-&uniphy0 {
-	status = "okay";
-
-	assigned-clocks = <&uniphy0 UNIPHY_CLK_REF>;
-	assigned-clock-rates = <UNIPHY_REFCLK_25MHZ>;
-};
-
 &mdio1 {
 	status = "okay";
 
@@ -230,7 +223,7 @@
 
 			port@1 {
 				reg = <1>;
-				label = "lan3";
+				label = "lan1";
 				phy-handle = <&qca8337_0>;
 			};
 
@@ -242,15 +235,10 @@
 
 			port@3 {
 				reg = <3>;
-				label = "lan1";
+				label = "lan3";
 				phy-handle = <&qca8337_2>;
 			};
 
-			port@4 {
-				reg = <4>;
-				label = "wan";
-				phy-handle = <&qca8337_3>;
-			};
 
 			port@6 {
 				reg = <6>;
