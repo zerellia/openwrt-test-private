@@ -151,7 +151,7 @@ case "$FIRMWARE" in
 		;;
 	ruijie,rg-ma3063)
 		caldata_extract "0:art" 0x26800 0x20000
-		wlan_mac=$(macaddr_add $(mtd_get_mac_ascii 0:appsblenv eth1addr) 2)
+		wlan_mac=$(macaddr_add $(mtd_get_mac_ascii 0:appsblenv eth1addr) 3)
 		ath11k_patch_mac $wlan_mac 0
 		ath11k_remove_regdomain
 		ath11k_set_macflag
