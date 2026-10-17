@@ -1,0 +1,36 @@
+From: mufeng05 (adapted for kuncy7 tree)
+Subject: ath11k: shrink remaining DP rings for 256M boards (complement to 207)
+
+kuncy7's 207 patch handles the 256M profile for TX_COMP and monitor rings,
+but leaves DP_RXDMA_BUF_RING_SIZE (4096), DP_RXDMA_MONITOR_DESC_RING_SIZE
+(4096), and DP_RX_RELEASE_RING_SIZE (1024) at defaults. These consume
+significant host-side RAM.
+
+This patch shrinks the two large ones and enlarges RX_RELEASE for NSS
+stability (per mufeng05's measurements: NSS traps with smaller RX_RELEASE).
+
+---
+ drivers/net/wireless/ath/ath11k/dp.h | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/dp.h b/drivers/net/wireless/ath/ath11k/dp.h
+index xxx..yyy 100644
+--- a/drivers/net/wireless/ath/ath11k/dp.h
++++ b/drivers/net/wireless/ath/ath11k/dp.h
+@@ -210,7 +210,7 @@
+ #define DP_REO_DST_RING_SIZE		2048
+ #define DP_REO_REINJECT_RING_SIZE	32
+-#define DP_RX_RELEASE_RING_SIZE		1024
++#define DP_RX_RELEASE_RING_SIZE		4096
+ #define DP_REO_EXCEPTION_RING_SIZE	128
+ #define DP_REO_CMD_RING_SIZE		256
+ #define DP_REO_STATUS_RING_SIZE		2048
+-#define DP_RXDMA_BUF_RING_SIZE		4096
++#define DP_RXDMA_BUF_RING_SIZE		1024
+ #define DP_RXDMA_REFILL_RING_SIZE	2048
+ #define DP_RXDMA_ERR_DST_RING_SIZE	1024
+ #define DP_RXDMA_MON_STATUS_RING_SIZE	1024
+ #define DP_RXDMA_MONITOR_BUF_RING_SIZE	4096
+ #define DP_RXDMA_MONITOR_DST_RING_SIZE	2048
+-#define DP_RXDMA_MONITOR_DESC_RING_SIZE	4096
++#define DP_RXDMA_MONITOR_DESC_RING_SIZE	128
