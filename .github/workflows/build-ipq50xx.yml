@@ -355,7 +355,7 @@ jobs:
           set -euo pipefail
           cd site
           for d in "${TAG}"/packages-*; do mv "$d" "${TAG}/${d##*/packages-}"; done
-          for g in std 256m; do
+          for g in 256m; do
             [[ -f "${TAG}/${g}/packages.adb" ]] || { echo "::error::${TAG}/${g} has no package index"; exit 1; }
           done
           # keep the newest KEEP build directories; the tag is a date, so name order is time order
