@@ -250,6 +250,14 @@ jobs:
           CCACHE_DIR="$PWD/.ccache" staging_dir/host/bin/ccache -s || true
           df -h / | tail -1
 
+      - name: Upload patch rejects on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: patch-rejects
+          path: build_dir/target-*/linux-*/mac80211-*/backports-*/**/*.rej
+          retention-days: 7
+
       - name: Add luci-app-nss and wpad-mesh-mbedtls to the build's repository
         run: |
           set -euo pipefail
