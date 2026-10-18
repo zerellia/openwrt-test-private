@@ -263,7 +263,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: patched-dph
-          path: build_dir/target-*/linux-*/mac80211-*/backports-*/drivers/net/wireless/ath/ath11k/dp.h
+          path: |
+            build_dir/target-*/linux-*/mac80211-*/backports-*/drivers/net/wireless/ath/ath11k/dp.h
+            build_dir/target-*/linux-*/mac80211-*/backports-*/drivers/net/wireless/ath/ath11k/dp_tx.c
           retention-days: 7
 
       - name: Add luci-app-nss and wpad-mesh-mbedtls to the build's repository
