@@ -14,7 +14,7 @@ diff --git a/drivers/net/wireless/ath/ath11k/dp.h b/drivers/net/wireless/ath/ath
 index 1234567..89abcde 100644
 --- a/drivers/net/wireless/ath/ath11k/dp.h
 +++ b/drivers/net/wireless/ath/ath11k/dp.h
-@@ -214,13 +214,13 @@ struct ath11k_pdev_dp {
+@@ -213,13 +213,13 @@ struct ath11k_pdev_dp {
  #define DP_REO_DST_RING_SIZE		2048
  #define DP_REO_REINJECT_RING_SIZE	32
 -#define DP_RX_RELEASE_RING_SIZE		1024
