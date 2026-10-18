@@ -258,8 +258,8 @@ jobs:
           path: build_dir/target-*/linux-*/mac80211-*/backports-*/**/*.rej
           retention-days: 7
 
-      - name: Upload patched dp.h on failure
-        if: failure()
+      - name: Upload patched dp.h
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: patched-dph
