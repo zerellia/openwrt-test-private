@@ -1,0 +1,11 @@
+--- a/drivers/net/wireless/ath/ath11k/dp.h
++++ b/drivers/net/wireless/ath/ath11k/dp.h
+@@ -215,1 +215,1 @@
+-#define DP_RX_RELEASE_RING_SIZE		1024
++#define DP_RX_RELEASE_RING_SIZE		4096
+@@ -219,1 +219,1 @@
+-#define DP_RXDMA_BUF_RING_SIZE		4096
++#define DP_RXDMA_BUF_RING_SIZE		1024
+@@ -225,1 +225,1 @@
+-#define DP_RXDMA_MONITOR_DESC_RING_SIZE	4096
++#define DP_RXDMA_MONITOR_DESC_RING_SIZE	128
