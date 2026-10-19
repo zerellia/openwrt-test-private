@@ -1,20 +1,28 @@
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -10910,8 +10910,16 @@
- 
- 	for (i = 0; i < band->n_channels; i++) {
- 		if (band->channels[i].center_freq < freq_low ||
--		    band->channels[i].center_freq > freq_high)
-+		    band->channels[i].center_freq > freq_high) {
-+			/* Keep UNII-3 channels (5745-5825 MHz) enabled.
-+			 * The firmware may report a restricted frequency range
-+			 * (e.g. CN regulatory), but the board data has calibration
-+			 * for UNII-3, so do not disable these channels. */
-+			if (band->channels[i].center_freq >= 5745 &&
-+			    band->channels[i].center_freq <= 5825)
-+				continue;
- 			band->channels[i].flags |= IEEE80211_CHAN_DISABLED;
-+		}
+@@ -11028,6 +11028,22 @@
+ 			}
+ 		}
  	}
+ 
++	/* Keep UNII-3 channels (5745-5825 MHz, ch 149-165) enabled.
++	 * The QCN6122 firmware uses CN regulatory internally which disables
++	 * UNII-3, but the board data has calibration for these frequencies,
++	 * so clear the DISABLED flag set by ath11k_mac_update_ch_list(). */
++	{
++		struct ieee80211_supported_band *band_5g;
++		int i;
++
++		band_5g = ar->hw->wiphy->bands[NL80211_BAND_5GHZ];
++		if (band_5g) {
++			for (i = 0; i < band_5g->n_channels; i++) {
++				if (band_5g->channels[i].center_freq >= 5745 &&
++				    band_5g->channels[i].center_freq <= 5825)
++					band_5g->channels[i].flags &= ~IEEE80211_CHAN_DISABLED;
++			}
++		}
++	}
++
+ 	return 0;
  }
  
