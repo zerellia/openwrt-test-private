@@ -91,7 +91,6 @@ jobs:
             echo
             echo "| group | memory | boards |"
             echo "|---|---|---|"
-            echo "| std | 512 MB / 1 GB | $(boards std)|"
             echo "| 256m | 256 MB | $(boards 256m)|"
           } >release_notes.md
           gh release create "$tag" --repo "$GITHUB_REPOSITORY" --draft --target "$GITHUB_SHA" \
@@ -109,7 +108,7 @@ jobs:
       fail-fast: false
       matrix:
         # One group = one ath11k/nss-drv memory profile, which is image-wide.
-        group: [std, 256m]
+        group: [256m]
     env:
       GH_TOKEN: ${{ github.token }}
       GROUP: ${{ matrix.group }}
@@ -251,6 +250,14 @@ jobs:
           CCACHE_DIR="$PWD/.ccache" staging_dir/host/bin/ccache -s || true
           df -h / | tail -1
 
+      - name: Upload patch rejects on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: patch-rejects
+          path: build_dir/target-*/linux-*/mac80211-*/backports-*/**/*.rej
+          retention-days: 7
+
       - name: Add luci-app-nss and wpad-mesh-mbedtls to the build's repository
         run: |
           set -euo pipefail
@@ -301,6 +308,7 @@ jobs:
           names=(-name 'openwrt-*-squashfs-sysupgrade.bin'); sums='sysupgrade\.bin'
           if [[ "$GROUP" == 256m ]]; then
             names+=(-o -name 'openwrt-*-initramfs-factory.ubi'); sums+='|initramfs-factory\.ubi'
+            names+=(-o -name 'openwrt-*-initramfs-uImage.itb'); sums+='|initramfs-uImage\.itb'
           fi
           mapfile -t assets < <(find "$out" -maxdepth 1 -type f \( "${names[@]}" \))
           grep -E "$sums" "$out/sha256sums" >"sha256sums-${GROUP}.txt"
@@ -363,7 +371,7 @@ jobs:
           set -euo pipefail
           cd site
           for d in "${TAG}"/packages-*; do mv "$d" "${TAG}/${d##*/packages-}"; done
-          for g in std 256m; do
+          for g in 256m; do
             [[ -f "${TAG}/${g}/packages.adb" ]] || { echo "::error::${TAG}/${g} has no package index"; exit 1; }
           done
           # keep the newest KEEP build directories; the tag is a date, so name order is time order
@@ -379,7 +387,7 @@ jobs:
             echo "An image lists its own; kernel modules only install on an image from the same build."
             echo
             for t in $(find . -maxdepth 1 -type d -printf '%f\n' | grep -E "$TAG_RE" | sort -r); do
-              echo "- ${t}: [std](${t}/std/packages.adb), [256m](${t}/256m/packages.adb)," \
+              echo "- ${t}: [256m](${t}/256m/packages.adb)," \
                 "[release](https://github.com/${GITHUB_REPOSITORY}/releases/tag/${t})"
             done
           } >index.md
