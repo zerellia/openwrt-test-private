@@ -6,4 +6,13 @@ uci commit network
 uci set firewall.@defaults[0].flow_offloading='0'
 uci set firewall.@defaults[0].flow_offloading_hw='0'
 uci commit firewall
+uci set wireless.radio0.noscan='1'
+uci commit wireless
+if [ -f /etc/proton2025/luci-theme-proton2025-1.4.4-r1.apk ]; then
+  if apk add --allow-untrusted /etc/proton2025/luci-theme-proton2025-1.4.4-r1.apk >/dev/null 2>&1; then
+    logger -t rg-ma3063-defaults "proton2025 theme installed"
+  else
+    logger -t rg-ma3063-defaults "proton2025 theme install failed"
+  fi
+fi
 exit 0
