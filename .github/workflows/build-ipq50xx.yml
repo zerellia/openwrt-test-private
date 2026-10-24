@@ -161,7 +161,10 @@ jobs:
         run: |
           set -euo pipefail
           # The files/ overlay wins over the list FeedSourcesAppendAPK generates.
-          mkdir -p files/etc/apk/repositories.d
+          # Ship kuncy's apk signing key so the image trusts his release repository
+          # (otherwise apk reports it UNTRUSTED and its kmods cannot be installed).
+          mkdir -p files/etc/apk/keys files/etc/apk/repositories.d
+          cp "${CI_DIR}/kuncy-public-key.pem" files/etc/apk/keys/kuncy-public-key.pem
           {
             # KUNCY_TAG is kuncy's latest release at build time (resolved in the release job),
             # never hardcoded: the date in this URL follows kuncy's newest release.
