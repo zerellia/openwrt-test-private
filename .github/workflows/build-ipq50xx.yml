@@ -1,8 +1,7 @@
 name: Build ipq50xx
 
-# Builds the sysupgrade images for every qualcommax/ipq50xx board, in two memory groups,
-# and publishes them together with the build's own kernel module repository:
-#   draft release -> build std + build 256m -> kmod repositories (gh-pages) -> publish -> prune
+# Builds the sysupgrade images for the qualcommax/ipq50xx 256m group:
+#   draft release -> build 256m -> publish -> prune
 #
 # Images go to a GitHub release tagged ipq50xx-YYYY.MM.DD. Sysupgrade only: a board is
 # expected to run OpenWrt already. The one exception is the 256m group, which also publishes
@@ -17,8 +16,7 @@ name: Build ipq50xx
 # The release tag is resolved from the GitHub API in the release job, never hardcoded, so the
 # date in that URL follows kuncy's newest release. Rebuild this branch from a new upstream
 # base as soon as kuncy cuts a new release, or the repository may stop matching this image's
-# kernel. This build's own bin/targets/.../packages/ is still published on the gh-pages branch
-# under <tag>/<group>/ as a fallback. The official target and kmods feeds are left out on
+# kernel. The official target and kmods feeds are left out on
 # purpose: their kernel is a different build and nothing in them installs here.
 #
 # Board lists and memory profiles: .github/ci/ipq50xx/*.config.
@@ -350,78 +348,9 @@ jobs:
             echo "- repository: $(find "$out/packages" -maxdepth 1 -name '*.apk' | wc -l) packages"
           } >>"$GITHUB_STEP_SUMMARY"
 
-      - name: Keep the package repository for the pages job
-        uses: actions/upload-artifact@v4
-        with:
-          name: packages-${{ matrix.group }}
-          path: bin/targets/${{ env.TARGET }}/packages/
-          retention-days: 3
-          if-no-files-found: error
-
-  pages:
-    name: Publish kmod repositories
-    needs: [release, build]
-    runs-on: ubuntu-26.04
-    timeout-minutes: 15
-    permissions:
-      contents: write
-    env:
-      GH_TOKEN: ${{ github.token }}
-      TAG: ${{ needs.release.outputs.tag }}
-    steps:
-      - name: Check out gh-pages
-        run: |
-          set -euo pipefail
-          git init -q site
-          cd site
-          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          if git fetch -q --depth=1 origin gh-pages 2>/dev/null; then
-            git checkout -q -b gh-pages FETCH_HEAD
-          else
-            git checkout -q --orphan gh-pages
-          fi
-
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: packages-*
-          path: site/${{ needs.release.outputs.tag }}
-
-      - name: Arrange, prune, push
-        run: |
-          set -euo pipefail
-          cd site
-          for d in "${TAG}"/packages-*; do mv "$d" "${TAG}/${d##*/packages-}"; done
-          for g in 256m; do
-            [[ -f "${TAG}/${g}/packages.adb" ]] || { echo "::error::${TAG}/${g} has no package index"; exit 1; }
-          done
-          # keep the newest KEEP build directories; the tag is a date, so name order is time order
-          mapfile -t dirs < <(find . -maxdepth 1 -type d -printf '%f\n' | grep -E "$TAG_RE" | sort -r)
-          for old in "${dirs[@]:${KEEP}}"; do
-            echo "prune $old"
-            rm -rf "$old"
-          done
-          {
-            echo "# Kernel module repositories"
-            echo
-            echo "One directory per build of \`${GITHUB_REPOSITORY}\`, one subdirectory per memory group."
-            echo "An image lists its own; kernel modules only install on an image from the same build."
-            echo
-            for t in $(find . -maxdepth 1 -type d -printf '%f\n' | grep -E "$TAG_RE" | sort -r); do
-              echo "- ${t}: [256m](${t}/256m/packages.adb)," \
-                "[release](https://github.com/${GITHUB_REPOSITORY}/releases/tag/${t})"
-            done
-          } >index.md
-          touch .nojekyll
-          # one commit per build: the branch holds binaries, its history is of no use
-          git checkout -q --orphan gh-pages-new
-          git add -A
-          git -c user.name=github-actions -c user.email=github-actions@github.com \
-            commit -qm "kernel module repositories, newest ${TAG}"
-          git push -q --force origin gh-pages-new:gh-pages
-
   publish:
     name: Publish release
-    needs: [release, build, pages]
+    needs: [release, build]
     if: always() && needs.release.result == 'success'
     runs-on: ubuntu-26.04
     timeout-minutes: 5
@@ -431,15 +360,14 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       TAG: ${{ needs.release.outputs.tag }}
       BUILD_RESULT: ${{ needs.build.result }}
-      PAGES_RESULT: ${{ needs.pages.result }}
     steps:
       - name: Publish or discard
         run: |
           set -euo pipefail
-          if [[ "$BUILD_RESULT" != "success" || "$PAGES_RESULT" != "success" ]]; then
-            # a release missing a group, or without its kmod repository, is worse than none
+          if [[ "$BUILD_RESULT" != "success" ]]; then
+            # a release missing a group is worse than none
             gh release delete "$TAG" --repo "$GITHUB_REPOSITORY" --yes
-            echo "::error::build=$BUILD_RESULT pages=$PAGES_RESULT; draft release discarded"
+            echo "::error::build=$BUILD_RESULT; draft release discarded"
             exit 1
           fi
           gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest
