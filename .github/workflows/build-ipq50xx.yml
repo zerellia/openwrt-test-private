@@ -10,9 +10,15 @@ name: Build ipq50xx
 # AX3000T v2) is installed and upgraded from that image.
 #
 # Kernel modules: a kmod depends on kernel=<version>~<vermagic>, so it can only be installed on
-# an image from the same build. Each build's bin/targets/.../packages/ is therefore published on
-# the gh-pages branch under <tag>/<group>/, and the image lists exactly that directory in
-# /etc/apk/repositories.d/distfeeds.list. The official target and kmods feeds are left out on
+# an image from the same build. This private tree differs from upstream only in a backports
+# patch and package selection, so its kernel matches the upstream release it is based on, and
+# the image lists kuncy's latest release repository in /etc/apk/repositories.d/distfeeds.list:
+#   https://kuncy7.github.io/openwrt-nss-edma/<latest-release>/<group>/packages.adb
+# The release tag is resolved from the GitHub API in the release job, never hardcoded, so the
+# date in that URL follows kuncy's newest release. Rebuild this branch from a new upstream
+# base as soon as kuncy cuts a new release, or the repository may stop matching this image's
+# kernel. This build's own bin/targets/.../packages/ is still published on the gh-pages branch
+# under <tag>/<group>/ as a fallback. The official target and kmods feeds are left out on
 # purpose: their kernel is a different build and nothing in them installs here.
 #
 # Board lists and memory profiles: .github/ci/ipq50xx/*.config.
@@ -40,7 +46,6 @@ env:
   # starts with "ipq50xx-" (ipq50xx-b3000-2026.09.07) are never touched.
   TAG_RE: '^ipq50xx-[0-9]{4}\.[0-9]{2}\.[0-9]{2}(-[0-9]+)?$'
   CI_DIR: .github/ci/ipq50xx
-  PAGES_BASE: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
 
 jobs:
   release:
@@ -54,9 +59,21 @@ jobs:
       INPUT_TAG: ${{ inputs.tag }}
     outputs:
       tag: ${{ steps.draft.outputs.tag }}
+      kuncy_tag: ${{ steps.kuncy.outputs.tag }}
     steps:
       - uses: actions/checkout@v7
+      - id: kuncy
+        run: |
+          set -euo pipefail
+          # The image's kmod repository is kuncy's latest release, resolved here so the
+          # date in the URL is never hardcoded and always follows kuncy's newest release.
+          tag=$(gh api repos/kuncy7/openwrt-nss-edma/releases/latest --jq .tag_name)
+          [[ "$tag" =~ ^ipq50xx-[0-9]{4}\.[0-9]{2}\.[0-9]{2}(-[0-9]+)?$ ]] || {
+            echo "::error::unexpected kuncy release tag: $tag"; exit 1; }
+          echo "tag=$tag" >>"$GITHUB_OUTPUT"
       - id: draft
+        env:
+          KUNCY_TAG: ${{ steps.kuncy.outputs.tag }}
         run: |
           set -euo pipefail
           tag="$INPUT_TAG"
@@ -84,10 +101,10 @@ jobs:
             echo
             echo "**Extra kernel modules** (wireguard, tun, USB storage and USB network,"
             echo "filesystems, GRE/VXLAN/L2TP, bonding, nft extras) are not in the image."
-            echo "\`apk update && apk add kmod-<name>\` fetches them from this build's own repository,"
-            echo "which the image already lists: \`${PAGES_BASE}/${tag}/<group>/packages.adb\`."
-            echo "Kernel modules only install on an image from the same build, so a repository stays"
-            echo "online as long as its release does (the newest ${KEEP} builds)."
+            echo "\`apk update && apk add kmod-<name>\` fetches them from kuncy's release repository,"
+            echo "which the image already lists: \`https://kuncy7.github.io/openwrt-nss-edma/${KUNCY_TAG}/<group>/packages.adb\`."
+            echo "Kernel modules only install on an image whose kernel matches that release's build;"
+            echo "this private tree is based on that same upstream release, so they match."
             echo
             echo "| group | memory | boards |"
             echo "|---|---|---|"
@@ -113,6 +130,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       GROUP: ${{ matrix.group }}
       TAG: ${{ needs.release.outputs.tag }}
+      KUNCY_TAG: ${{ needs.release.outputs.kuncy_tag }}
     steps:
       - name: Free disk space
         run: |
@@ -147,7 +165,9 @@ jobs:
           # The files/ overlay wins over the list FeedSourcesAppendAPK generates.
           mkdir -p files/etc/apk/repositories.d
           {
-            echo "${PAGES_BASE}/${TAG}/${GROUP}/packages.adb"
+            # KUNCY_TAG is kuncy's latest release at build time (resolved in the release job),
+            # never hardcoded: the date in this URL follows kuncy's newest release.
+            echo "https://kuncy7.github.io/openwrt-nss-edma/${KUNCY_TAG}/${GROUP}/packages.adb"
             for f in base luci packages routing telephony video; do
               echo "https://downloads.openwrt.org/snapshots/packages/aarch64_cortex-a53/${f}/packages.adb"
             done
