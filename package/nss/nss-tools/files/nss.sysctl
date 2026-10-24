@@ -32,3 +32,9 @@ net.core.netdev_max_backlog=4096
 # Do not add a writer to fight the service either - configure the service, as
 # 98-nss-offload does.
 net.core.rps_default_mask=e
+
+# RG-MA3063 private tuning, matching the mufeng05 "this build" column:
+# ECM redirect off (qca-nss-pbuf starts ECM only when redirect is 0),
+# and the NSS empty-pool buffer count for core0.
+dev.nss.general.redirect=0
+dev.nss.n2hcfg.n2h_empty_pool_buf_core0=4096
