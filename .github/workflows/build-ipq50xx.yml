@@ -165,6 +165,8 @@ jobs:
           # (otherwise apk reports it UNTRUSTED and its kmods cannot be installed).
           mkdir -p files/etc/apk/keys files/etc/apk/repositories.d
           cp "${CI_DIR}/kuncy-public-key.pem" files/etc/apk/keys/kuncy-public-key.pem
+          mkdir -p files/etc/proton2025
+          cp "${CI_DIR}/luci-theme-proton2025-1.4.4-r1.apk" files/etc/proton2025/luci-theme-proton2025-1.4.4-r1.apk
           {
             # KUNCY_TAG is kuncy's latest release at build time (resolved in the release job),
             # never hardcoded: the date in this URL follows kuncy's newest release.
