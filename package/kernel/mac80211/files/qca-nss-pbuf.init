@@ -201,7 +201,7 @@ apply_nss_config() {
       # Wi-Fi frames under load, 2048 is the tested fallback.
     256 | 256m*)
       if soc_is_ipq5018; then
-        extra_pbuf_core0=800000 n2h_high_water_core0=16336 n2h_wifi_pool_buf=0 apply_sysctl
+        extra_pbuf_core0=800000 n2h_high_water_core0=4096 n2h_wifi_pool_buf=0 apply_sysctl
       else
         extra_pbuf_core0=3100000 n2h_high_water_core0=30258 n2h_wifi_pool_buf=4096 apply_sysctl
       fi
