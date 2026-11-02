@@ -1,0 +1,73 @@
+#!/bin/sh
+# rg_switch_to_stock - switch RG-MA3063 from OpenWrt to stock, one command.
+# Mimics stock /sbin/rg_switch_partition, but uses OpenWrt's own
+# /lib/functions/bootconfig.sh instead of stock's /proc/boot_info.
+# It only flips the primaryboot flag of the "rootfs" entry in BOOTCONFIG:
+#   0 = boot OpenWrt (rootfs slot), 1 = boot stock (rootfs_1 slot).
+# It does NOT reboot by itself. Reboot after a successful run to apply.
+# Safety: validates magic on both copies, writes the redundant copy
+# (mtd3, 0:bootconfig1) first, verifies each write by read-back and cmp,
+# and aborts without rebooting if any check fails.
+# Usage: rg_switch_to_stock
+# Exit 0 = BOOTCONFIG now set to stock, reboot to apply.
+# Exit 1 = nothing was changed, or a write failed verification, do not reboot.
+
+. /lib/functions/bootconfig.sh
+
+BOOTCONFIG_MTD="/dev/mtd2"
+BOOTCONFIG1_MTD="/dev/mtd3"
+WORK="/tmp/bootconfig.switch.bin"
+ORIG="/tmp/bootconfig.orig.bin"
+
+die() {
+	echo "rg_switch_to_stock: $*" >&2
+	exit 1
+}
+
+[ -e "$BOOTCONFIG_MTD" ] || die "mtd2 not found"
+[ -e "$BOOTCONFIG1_MTD" ] || die "mtd3 not found"
+grep -q '"0:bootconfig"' /proc/mtd || die "mtd2 is not 0:bootconfig"
+grep -q '"0:bootconfig1"' /proc/mtd || die "mtd3 is not 0:bootconfig1"
+
+dd if="$BOOTCONFIG_MTD" of="$ORIG" bs=128k count=2 2>/dev/null \
+	|| die "could not read $BOOTCONFIG_MTD"
+dd if="$BOOTCONFIG1_MTD" of=/tmp/bootconfig1.orig.bin bs=128k count=2 2>/dev/null \
+	|| die "could not read $BOOTCONFIG1_MTD"
+cmp -s "$ORIG" /tmp/bootconfig1.orig.bin \
+	|| die "bootconfig and bootconfig1 do not match, refusing to switch"
+
+validate_bootconfig_magic "$ORIG" \
+	|| die "bootconfig magic is invalid, refusing to switch"
+
+current=$(get_bootconfig_primaryboot "$ORIG" rootfs)
+[ "$current" = "0" ] || [ "$current" = "1" ] \
+	|| die "current primaryboot for rootfs is '$current', not 0 or 1"
+if [ "$current" = "1" ]; then
+	echo "rg_switch_to_stock: already set to stock (primaryboot=1), nothing to do."
+	echo "Reboot to boot stock."
+	exit 0
+fi
+
+cp "$ORIG" "$WORK" || die "could not copy bootconfig to $WORK"
+set_bootconfig_primaryboot "$WORK" rootfs 1 \
+	|| die "could not set primaryboot in $WORK"
+new=$(get_bootconfig_primaryboot "$WORK" rootfs)
+[ "$new" = "1" ] || die "verification in file failed, new primaryboot is '$new'"
+
+mtd write "$WORK" "$BOOTCONFIG1_MTD" \
+	|| die "mtd write to $BOOTCONFIG1_MTD failed"
+dd if="$BOOTCONFIG1_MTD" of=/tmp/bootconfig1.check.bin bs=128k count=2 2>/dev/null \
+	|| die "could not read back $BOOTCONFIG1_MTD"
+cmp -s "$WORK" /tmp/bootconfig1.check.bin \
+	|| die "bootconfig1 verification failed, do not reboot"
+
+mtd write "$WORK" "$BOOTCONFIG_MTD" \
+	|| die "mtd write to $BOOTCONFIG_MTD failed"
+dd if="$BOOTCONFIG_MTD" of=/tmp/bootconfig.check.bin bs=128k count=2 2>/dev/null \
+	|| die "could not read back $BOOTCONFIG_MTD"
+cmp -s "$WORK" /tmp/bootconfig.check.bin \
+	|| die "bootconfig verification failed, do not reboot"
+
+echo "rg_switch_to_stock: primaryboot rootfs 0 -> 1, both copies verified."
+echo "Reboot to boot stock. From stock, /sbin/rg_switch_partition switches back to OpenWrt."
+exit 0
